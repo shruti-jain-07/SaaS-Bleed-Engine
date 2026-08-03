@@ -1,7 +1,0 @@
-import sys
-import os
-
-# Force Python to include the root directory in sys.path
-root_dir = os.path.dirname(os.path.abspath(__file__))
-if root_dir not in sys.path:
-    sys.path.insert(0, root_dir)

@@ -1,6 +1,7 @@
-import pytest
 import pandas as pd
-from ML.features.builder import FeatureBuilder
+import pytest
+from ml.features.builder import FeatureBuilder
+
 
 def test_feature_builder_extraction():
     data = {
@@ -9,7 +10,7 @@ def test_feature_builder_extraction():
         "vendor_name": ["Zoom", "Zoom"],
         "amount": [100.0, 500.0],
         "department_id": ["ENG", "ENG"],
-        "card_last_four": ["1234", "1234"]
+        "card_last_four": ["1234", "1234"],
     }
     df = pd.DataFrame(data)
     feature_matrix, processed_df = FeatureBuilder.extract_features(df)

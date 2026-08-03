@@ -1,16 +1,7 @@
-import os
-import sys
-from pathlib import Path
-
-# Add project root to sys.path for test discovery
-root_path = Path(__file__).resolve().parent.parent
-if str(root_path) not in sys.path:
-    sys.path.insert(0, str(root_path))
-
 import pytest
-from Backend.App.Services.NLP.preprocess import TextPreprocessor
-from Backend.App.Services.NLP.extractor import EntityExtractor
-from Backend.App.Services.NLP.risk_engine import ContractRiskEngine
+from backend.app.services.nlp.extractor import EntityExtractor
+from backend.app.services.nlp.preprocess import TextPreprocessor
+from backend.app.services.nlp.risk_engine import ContractRiskEngine
 
 
 def test_text_cleaning():

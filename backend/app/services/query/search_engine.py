@@ -1,5 +1,6 @@
 import re
 from typing import Any, Dict, List
+from sqlalchemy import asc, desc
 from sqlalchemy.orm import Session
 from backend.app.models.models import ContractAnalysisModel
 
@@ -7,12 +8,19 @@ from backend.app.models.models import ContractAnalysisModel
 class QueryEngine:
 
     @staticmethod
-    def parse_and_query(query_str: str, db: Session) -> List[Dict[str, Any]]:
-        """Parses simple natural language queries and filters contract records in DB."""
+    def parse_and_query(
+        query_str: str,
+        db: Session,
+        limit: int = 10,
+        offset: int = 0,
+        sort_by: str = "id",
+        sort_order: str = "asc",
+    ) -> List[Dict[str, Any]]:
+        """Parses natural language query filters and fetches paginated/sorted contract records from DB."""
         query_str_clean = query_str.lower().strip()
         db_query = db.query(ContractAnalysisModel)
 
-        # 1. Check for risk level keyword
+        # 1. Filter by risk level keyword
         for risk in ["critical", "high", "medium", "low"]:
             if risk in query_str_clean:
                 db_query = db_query.filter(
@@ -20,7 +28,7 @@ class QueryEngine:
                 )
                 break
 
-        # 2. Check for value threshold (e.g., "over 10000" or "> 5000")
+        # 2. Filter by contract value threshold
         value_match = re.search(
             r"(?:over|>|above|greater than)\s*\$?(\d+(?:\.\d+)?)",
             query_str_clean,
@@ -31,7 +39,7 @@ class QueryEngine:
                 ContractAnalysisModel.contract_value >= min_val
             )
 
-        # 3. Check for notice period (e.g., "30 days", "60 days notice")
+        # 3. Filter by notice period days
         notice_match = re.search(r"(\d+)\s*(?:days|day)", query_str_clean)
         if notice_match:
             days = int(notice_match.group(1))
@@ -39,20 +47,23 @@ class QueryEngine:
                 ContractAnalysisModel.notice_period_days == days
             )
 
-        # 4. Fallback search on vendor_name or filename
-        results = db_query.all()
-
-        # If no specific filters matched, try a vendor string search
-        if not results and query_str_clean:
-            results = (
-                db.query(ContractAnalysisModel)
-                .filter(
-                    ContractAnalysisModel.vendor_name.ilike(
-                        f"%{query_str_clean}%"
-                    )
+        # 4. Fallback keyword search on vendor_name if primary filters didn't narrow down results
+        if not db_query.count() and query_str_clean:
+            db_query = db.query(ContractAnalysisModel).filter(
+                ContractAnalysisModel.vendor_name.ilike(
+                    f"%{query_str_clean}%"
                 )
-                .all()
             )
+
+        # 5. Dynamic Sorting
+        sort_column = getattr(ContractAnalysisModel, sort_by, ContractAnalysisModel.id)
+        if sort_order.lower() == "desc":
+            db_query = db_query.order_by(desc(sort_column))
+        else:
+            db_query = db_query.order_by(asc(sort_column))
+
+        # 6. Pagination Execution
+        results = db_query.offset(offset).limit(limit).all()
 
         return [
             {

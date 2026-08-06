@@ -13,3 +13,19 @@ app = FastAPI(
 @app.get("/health", tags=["Health"])
 def health_check():
     return {"status": "healthy", "service": "SaaS-Bleed-Engine"}
+
+from fastapi import FastAPI
+from backend.app.api.endpoints import router as api_router
+
+app = FastAPI(
+    title="SaaS Bleed Engine API",
+    version="1.0.0",
+    description="Engine for detecting contract risk and SaaS spend leakages.",
+)
+
+app.include_router(api_router)
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
